@@ -1,17 +1,19 @@
-import time
-import busio
+import logging, busio
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 
 try:
     from board import SCL, SDA
 except NotImplementedError:
-    # Handle the case where we're not on a Raspberry Pi
+    logging.warning("No board detected. Running in test mode")
     SCL = None
     SDA = None
 
 OVERFLOW_NONE = 0
 OVERFLOW_NEXT_LINE = 1
+
+BLACK = 0
+WHITE = 255
 
 class Device:
     def __init__(self, width=128, height=32):
@@ -27,7 +29,8 @@ class Device:
 class Display:
     def __init__(self,
                  font=ImageFont.load_default(),
-                 transpose=None, overflow=OVERFLOW_NONE, width=128, height=32):
+                 transpose=None, overflow=OVERFLOW_NONE, width=128, height=32,
+                 inverted=False):
 
         self.device = None
         if SCL is not None and SDA is not None:
@@ -35,25 +38,36 @@ class Display:
 
         self.width = width
         self.height = height
+
         self.transpose = transpose
         self.padding = -2
         self.top = self.padding
         self.bottom = self.height - self.padding
         self.x = 0
-        self.overflow = overflow
 
+        self.overflow = overflow
         self.font = font
+        self.background = WHITE if inverted else BLACK
+        self.foreground = BLACK if inverted else WHITE
+
         self.image = Image.new("1", (self.width, self.height))
         self.draw = ImageDraw.Draw(self.image)
 
     def draw_text(self, text):
         text = self.format_text(text)
-        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
-        self.draw.text((self.x, self.top + 0), text, font=self.font, fill=255)
+        self.draw.rectangle((0, 0, self.width, self.height),
+                            outline=BLACK,
+                            fill=self.background)
+        self.draw.text((self.x, self.top + 0),
+                       text,
+                       font=self.font,
+                       fill=self.foreground)
         self.show()
 
     def clear(self):
-        self.draw.rectangle((0, 0, self.width, self.height), outline=0, fill=0)
+        self.draw.rectangle((0, 0, self.width, self.height),
+                            outline=BLACK,
+                            fill=BLACK)
         self.show()
 
     def format_text(self, text):
@@ -83,10 +97,6 @@ class Display:
         image.show()
 
 if __name__ == "__main__":
-    display = Display(transpose=Image.ROTATE_180, overflow=OVERFLOW_NEXT_LINE)
+    display = Display(inverted=True)
     display.draw_text("Hello World! This is a test")
-    time.sleep(2)
-    display.draw_text("Hello World!")
-    time.sleep(2)
-    display.clear()
 
