@@ -64,6 +64,13 @@ class Display:
                        fill=self.foreground)
         self.show()
 
+    def draw_image(self, image):
+        self.draw.rectangle((0, 0, self.width, self.height),
+                            outline=BLACK,
+                            fill=self.background)
+        self.image.paste(image, (0, 0))
+        self.show()
+
     def clear(self):
         self.draw.rectangle((0, 0, self.width, self.height),
                             outline=BLACK,
@@ -96,7 +103,13 @@ class Display:
 
         image.show()
 
+def resize_image(image, size):
+    return image.resize(size)
+
 if __name__ == "__main__":
     display = Display(inverted=True)
-    display.draw_text("Hello World! This is a test")
+    # display.draw_text("Hello World! This is a test")
 
+    img = Image.open("/Users/arjunmahishi/Downloads/1bit.png")
+    resized = resize_image(img, (128, 32))
+    display.draw_image(resized)
